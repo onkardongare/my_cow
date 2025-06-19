@@ -1,6 +1,6 @@
-## Organic Farming Mobile Application
+##  Cow Management Mobile Application
 
-Welcome to the MyCow Mobile Application repository! This project delivers a comprehensive mobile solution for dairy farm operations, developed using React Native and styled with NativeWind, a utility-first styling library inspired by Tailwind CSS.
+Welcome to the My Cow Mobile Application repository! This project delivers a comprehensive mobile solution for dairy farm operations, developed using React Native and styled with NativeWind, a utility-first styling library inspired by Tailwind CSS.
 
 
 ### Prerequisites
