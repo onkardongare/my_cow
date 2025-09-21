@@ -54,17 +54,18 @@ export const addCow = createAsyncThunk(
         ]
       );
 
-      // If cow was purchased, create a transaction
+      // If cow was purchased, create a transaction 
       if (cowData.cattleObtained === 'purchase' && cowData.purchasePrice) {
-        await db.runAsync(
+       await db.runAsync(
           `INSERT INTO transactions (
-            type, amount, category, date, description
-          ) VALUES (?, ?, ?, ?, ?)`,
+            type, amount, category, date,cowId, description
+          ) VALUES (?, ?, ?, ?, ?, ?)`,
           [
             'expense',
             cowData.purchasePrice,
             'cattle_purchase',
             new Date().toISOString(),
+            result.lastInsertRowId,
             `Purchase of cow with ear tag ${cowData.earTagNumber}`
           ]
         );

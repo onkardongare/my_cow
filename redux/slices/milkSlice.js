@@ -23,14 +23,6 @@ export const addMilkRecord = createAsyncThunk(
         throw new Error('Missing required fields');
       }
 
-      // Calculate total produced
-      const totalProduced = (
-        parseFloat(milkData.amTotal) +
-        parseFloat(milkData.pmTotal)
-      ).toFixed(1);
-
-      // Calculate total income
-      const totalIncome = (totalProduced * parseFloat(milkData.milkRate)).toFixed(2);
       // Ensure cowIds is an array
       const cowIds = Array.isArray(milkData.cowIds) ? milkData.cowIds : [milkData.cowIds];
 
@@ -38,16 +30,17 @@ export const addMilkRecord = createAsyncThunk(
       const result = await db.runAsync(
         `INSERT INTO milk (
           date, cowIds, amTotal, pmTotal,
-          totalProduced, milkRate, totalIncome
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          totalProduced, milkRateAm, milkRatePm, totalIncome
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           milkData.date,
           JSON.stringify(cowIds),
           milkData.amTotal,
           milkData.pmTotal,
-          totalProduced,
-          milkData.milkRate,
-          totalIncome
+          milkData.totalProduced,
+          milkData.milkRateAm,
+          milkData.milkRatePm,
+          milkData.totalIncome
         ]
       );
 
@@ -102,15 +95,6 @@ export const updateMilkRecord = createAsyncThunk(
   async ({ id, milkData }, { rejectWithValue }) => {
     try {
       const db = await getDatabase();
-      
-      // Calculate total produced
-      const totalProduced = (
-        parseFloat(milkData.amTotal) +
-        parseFloat(milkData.pmTotal)
-      ).toFixed(1);
-
-      // Calculate total income
-      const totalIncome = (totalProduced * parseFloat(milkData.milkRate)).toFixed(2);
 
       // Update milk record in database
       await db.runAsync(
@@ -120,7 +104,8 @@ export const updateMilkRecord = createAsyncThunk(
           amTotal = ?,
           pmTotal = ?,
           totalProduced = ?,
-          milkRate = ?,
+          milkRateAm = ?,
+          milkRatePm = ?,
           totalIncome = ?,
           updatedAt = datetime('now')
         WHERE id = ?`,
@@ -129,9 +114,10 @@ export const updateMilkRecord = createAsyncThunk(
           JSON.stringify(milkData.cowIds),
           milkData.amTotal,
           milkData.pmTotal,
-          totalProduced,
-          milkData.milkRate,
-          totalIncome,
+          milkData.totalProduced,
+          milkData.milkRateAm,
+          milkData.milkRatePm,
+          milkData.totalIncome,
           id
         ]
       );

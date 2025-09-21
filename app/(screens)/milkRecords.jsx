@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Image, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, TouchableOpacity, FlatList, Image, Alert, StyleSheet } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useDispatch, useSelector } from 'react-redux';
@@ -18,6 +18,18 @@ const MilkRecordsScreen = () => {
   const [showFilter, setShowFilter] = useState(false);
   const { records, loading, selectedRange } = useSelector(state => state.milk);
   const { cows } = useSelector(state => state.cows);
+
+  const summary = useMemo(() => {
+    if (!records || records.length === 0) {
+      return { totalMilk: '0.00', totalIncome: '0.00' };
+    }
+    const totalMilk = records.reduce((sum, record) => sum + (parseFloat(record.totalProduced) || 0), 0);
+    const totalIncome = records.reduce((sum, record) => sum + (parseFloat(record.totalIncome) || 0), 0);
+    return {
+      totalMilk: totalMilk.toFixed(2),
+      totalIncome: totalIncome.toFixed(2)
+    };
+  }, [records]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -182,14 +194,21 @@ const MilkRecordsScreen = () => {
         <Text className="font-semibold">{item.totalProduced} L</Text>
       </View>
 
-      <View className="flex-row justify-between mb-2">
-        <Text className="text-gray-600">{t('ratePerLitre')}:</Text>
-        <Text className="font-semibold">₹{item.milkRate}</Text>
+      <View className="border-t border-gray-200 my-2" />
+
+      <View className="flex-row justify-between mb-1">
+        <Text className="text-gray-600">{t('amRatePerLitre')}:</Text>
+        <Text className="font-semibold">₹{item.milkRateAm?.toFixed(2) || '0.00'}</Text>
       </View>
 
-      <View className="flex-row justify-between">
-        <Text className="text-gray-600">{t('totalIncome')}:</Text>
-        <Text className="font-semibold text-green-600">₹{item.totalIncome}</Text>
+      <View className="flex-row justify-between mb-2">
+        <Text className="text-gray-600">{t('pmRatePerLitre')}:</Text>
+        <Text className="font-semibold">₹{item.milkRatePm?.toFixed(2) || '0.00'}</Text>
+      </View>
+
+      <View className="flex-row justify-between mt-2 pt-2 border-t border-gray-200">
+        <Text className="text-gray-800 font-bold">{t('totalIncome')}:</Text>
+        <Text className="font-bold text-lg text-green-600">₹{item.totalIncome?.toFixed(2) || '0.00'}</Text>
       </View>
     </View>
   );
@@ -206,6 +225,23 @@ const MilkRecordsScreen = () => {
           <Feather name="filter" size={24} color="black" />
         </TouchableOpacity>
       </View>
+
+      {/* Summary Section */}
+      {!loading && records.length > 0 && (
+        <View className="p-4 bg-white border-b border-gray-200 mx-4 mt-4 rounded-lg shadow-sm">
+          <Text className="text-lg font-bold text-gray-800 mb-3">{t('summary')}</Text>
+          <View className="flex-row justify-around">
+            <View className="items-center p-2 flex-1">
+              <Text className="text-gray-600">{t('totalMilk')}</Text>
+              <Text className="text-2xl font-bold text-blue-600">{summary.totalMilk} L</Text>
+            </View>
+            <View className="items-center p-2 flex-1">
+              <Text className="text-gray-600">{t('totalIncome')}</Text>
+              <Text className="text-2xl font-bold text-green-600">₹{summary.totalIncome}</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -228,7 +264,7 @@ const MilkRecordsScreen = () => {
           data={records}
           renderItem={renderMilkRecord}
           keyExtractor={item => item.id.toString()}
-          contentContainerClassName="p-4"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 80 }}
         />
       )}
 

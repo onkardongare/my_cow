@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, Pressable, TouchableOpacity, Animated, TouchableWithoutFeedback, Modal, RefreshControl } from "react-native";
+import { View, Text, Image, ScrollView, Pressable, TouchableOpacity, Animated, TouchableWithoutFeedback, Modal, RefreshControl, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect, useCallback } from "react";
 import { icons, images } from "../../constants";
@@ -12,7 +12,13 @@ import { fetchEvents } from "../../redux/slices/eventSlice";
 import { fetchMilkRecords } from "../../redux/slices/milkSlice";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 
-const CattleTypeCard = ({ title, count, color, icon }) => (
+const CattleTypeCard = ({ title, name, count, color, icon, router }) => (
+  <TouchableOpacity
+    onPress={() => router.push({
+      pathname: "/(screens)/filterCattle",
+      params: { filter: name.toLowerCase() }
+    })}
+    style={{ backgroundColor: color }} className="rounded-lg mr-1 flex-1 items-center"  >
   <View style={{ backgroundColor: color }} className="rounded-lg mr-1 flex-1 items-center">
     <Image 
       source={icon} 
@@ -21,6 +27,7 @@ const CattleTypeCard = ({ title, count, color, icon }) => (
     <Text className="text-white text-sm font-semibold" numberOfLines={1} >{title}</Text>
     <Text className="text-white text-xl font-bold">{count}</Text>
   </View>
+  </TouchableOpacity>
 );
 
 const SummaryHeader = ({ title }) => (
@@ -81,16 +88,16 @@ const ConditionCard = ({ icon, name, label, count, color, router }) => (
 export default function HomeScreen() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const currentLanguage = useSelector((state) => state.language.lang);
   const { cows, stats, loading } = useSelector((state) => state.cows);
   const { transactions } = useSelector((state) => state.transactions);
   const { events } = useSelector((state) => state.events);
   const { records: milkRecords } = useSelector((state) => state.milk);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const slideAnim = useState(new Animated.Value(-250))[0];
+  // const slideAnim = useState(new Animated.Value(-250))[0];
 
   const loadData = useCallback(async () => {
     try {
@@ -119,24 +126,7 @@ export default function HomeScreen() {
   }, [loadData]);
 
   const toggleSidebar = () => {
-    const toValue = isOpen ? -500 : 0;
-    setIsOpen(!isOpen);
-    Animated.timing(slideAnim, {
-      toValue,
-      duration: 900,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeSidebar = () => {
-    if (isOpen) {
-      setIsOpen(false);
-      Animated.timing(slideAnim, {
-        toValue: -500,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }
+    setIsSidebarOpen(true);
   };
 
   const handleLanguageChange = (lang) => {
@@ -155,9 +145,9 @@ export default function HomeScreen() {
 
   const cattleTypes = [
     // { title: t('bulls'), count: stats.bulls, color: '#1ABC9C', icon: icons.bull },
-    { title: t('calves'), count: stats.calves, color: '#E84393', icon: icons.calve },
-    { title: t('heifers'), count: stats.heifers, color: '#9B59B6', icon: icons.heifer },
-    { title: t('cows'), count: stats.cows, color: '#FF7675', icon: icons.cow },
+    { title: t('calves'), name: 'calves', count: stats.calves, color: '#E84393', icon: icons.calve },
+    { title: t('heifers'), name: 'heifers', count: stats.heifers, color: '#9B59B6', icon: icons.heifer },
+    { title: t('cows'), name: 'cows', count: stats.cows, color: '#FF7675', icon: icons.cow },
   ];
 
   const conditions = [
@@ -186,8 +176,8 @@ export default function HomeScreen() {
     {
       title: t('preferences'),
       items: [
-        { icon: icons.info, title: t('about'), onPress: () => router.push("/(screens)/about") },
-        { icon: icons.privacy, title: t('privacyPolicy'), onPress: () => router.push("/(screens)/privacyPolicy") }
+        { icon: icons.aboutUs, title: t('about'), onPress: () => router.push("/(screens)/about") },
+        { icon: icons.privacy, title: t('privacyPolicy'), onPress: () => Linking.openURL('https://www.privacypolicies.com/live/27800d9c-f108-476a-b8e1-ee1bf81d2842') }
       ]
     }
   ];
@@ -309,7 +299,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-300">
       {/* Header */}
-      <View className="flex-row items-center p-2 bg-green-700">
+      <View className="flex-row items-center p-2 bg-green-500">
         <TouchableOpacity onPress={toggleSidebar} className="p-2">
           <Image 
             source={icons.menu} 
@@ -385,32 +375,32 @@ export default function HomeScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
-      {/* Animated Sidebar */}
-      {isOpen && (
-        <TouchableWithoutFeedback>
-          <Animated.View
-            style={[{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              bottom: 0,
-              width: 250,
-              backgroundColor: 'white',
-              zIndex: 1000,
-              transform: [{ translateX: slideAnim }]
-            }]}
+      
+      {/* Sidebar */}
+      {isSidebarOpen && (
+        <>
+          <TouchableOpacity
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 99,
+            }}
+            activeOpacity={1}
+            onPress={() => setIsSidebarOpen(false)}
+          />
+          <View
+            style={{
+              position: 'absolute', top: 26, left: 0, height: '100%', width: 256,
+              backgroundColor: 'white', shadowColor: '#000', shadowOffset: { width: 2, height: 0 },
+              shadowOpacity: 0.2, shadowRadius: 8, elevation: 10, zIndex: 100,
+            }}
           >
-            <SafeAreaView className="flex-1">
-              <View className="p-4 bg-green-700">
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-xl font-bold text-white">{t('menu')}</Text>
-                  <TouchableOpacity onPress={closeSidebar}>
-                    <Text className="text-2xl text-white">✕</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <ScrollView className="flex-1">
+            <View className="flex-row p-4 border-b bg-green-500 border-gray-200">
+              <Text className="text-2xl font-bold text-white">My Cow</Text>
+              <TouchableOpacity onPress={() => setIsSidebarOpen(false)} className="pt- p-2 rounded-lg py-1 ml-16 bg-blue-800">
+                <Text className="text-white text-bold">{t('close')}</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView className="flex-1">
                 {menuSections.map((section, sectionIndex) => (
                   <View key={sectionIndex} className="mb-6">
                     <Text className="px-4 py-2 text-gray-500 text-base font-medium">
@@ -421,7 +411,6 @@ export default function HomeScreen() {
                         key={itemIndex}
                         onPress={() => {
                           item.onPress();
-                          closeSidebar();
                         }}
                         className="flex-row items-center px-4 py-3 border-b border-gray-100"
                       >
@@ -436,18 +425,8 @@ export default function HomeScreen() {
                   </View>
                 ))}
               </ScrollView>
-            </SafeAreaView>
-          </Animated.View>
-        </TouchableWithoutFeedback>
-      )}
-
-      {/* Backdrop */}
-      {isOpen && (
-        <Pressable 
-          className="absolute inset-0 bg-black/30"
-          style={{ zIndex: 999 }}
-          onPress={closeSidebar}
-        />
+          </View>
+        </>
       )}
 
       {/* Main Content */}
@@ -477,7 +456,7 @@ export default function HomeScreen() {
               {/* Cattle Types Grid */}
               <View className="flex-row pl-2 gap-2 mt-2">
                 {cattleTypes.map((type, index) => (
-                  <CattleTypeCard key={index} {...type} />
+                  <CattleTypeCard key={index} {...type} router={router} />
                 ))}
               </View>
 
@@ -543,10 +522,7 @@ export default function HomeScreen() {
             <View className="flex-row justify-between items-center">
               <SummaryHeader title={t('incomesExpenses')} />
               <TouchableOpacity onPress={()=> router.push("/transactions")}>
-                <Image
-                  source={icons.next}
-                  className="w-10 h-10"
-                />
+                <Text className="text-indigo-800 bg-blue-300 rounded-md p-2 font-medium mr-2">{t('viewAll')}</Text>
               </TouchableOpacity>
             </View>
             <View className="p-4">
@@ -556,18 +532,18 @@ export default function HomeScreen() {
                   <Text className="text-xl font-bold text-[#3BB273]">
                     ₹{calculateFinancialMetrics().income.toFixed(2)}
                   </Text>
-                  <Text className="text-sm text-orange-400">
+                  {/* <Text className="text-sm text-orange-400">
                     {t('receivables')}: ₹{calculateFinancialMetrics().receivables.toFixed(2)}
-                  </Text>
+                  </Text> */}
                 </View>
                 <View className="items-end">
                   <Text className="text-gray-600">{t('expenses')}</Text>
                   <Text className="text-xl font-bold text-red-500">
                     ₹{calculateFinancialMetrics().expenses.toFixed(2)}
                   </Text>
-                  <Text className="text-sm text-red-400">
+                  {/* <Text className="text-sm text-red-400">
                     {t('debts')}: ₹{calculateFinancialMetrics().debts.toFixed(2)}
-                  </Text>
+                  </Text> */}
                 </View>
               </View>
               <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -588,10 +564,7 @@ export default function HomeScreen() {
             <View className="flex-row justify-between items-center">
               <SummaryHeader title={t('milk')} />
               <TouchableOpacity onPress={()=>router.push("/(screens)/milkRecords")}>
-                <Image
-                  source={icons.next}
-                  className="w-10 h-10"
-                />
+                <Text className="text-indigo-800 bg-blue-300 rounded-md p-2 font-medium mr-2">{t('viewAll')}</Text>
               </TouchableOpacity>
             </View>
             <View className="p-4">
@@ -632,7 +605,7 @@ export default function HomeScreen() {
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-xl font-bold text-gray-900">{t('upcomingTasks')}</Text>
             <TouchableOpacity onPress={() => router.push("/events")}>
-              <Text className="text-indigo-600 font-medium">{t('viewAll')}</Text>
+              <Text className="text-indigo-800 bg-blue-300 rounded-md p-2 font-medium mr-2">{t('viewAll')}</Text>
             </TouchableOpacity>
           </View>
           <View className="space-y-3">
@@ -645,7 +618,7 @@ export default function HomeScreen() {
                 >
                   <View className="flex-row justify-between items-center">
                     <View>
-                      <Text className="font-medium text-gray-900">{event.type}</Text>
+                      <Text className="font-medium text-gray-900">{t(event.type)}</Text>
                       <Text className="text-gray-600">
                         {event.cowIds.length} {event.cowIds.length === 1 ? t('cow') : t('cows')}
                       </Text>

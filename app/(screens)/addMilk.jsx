@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { AntDesign } from "@expo/vector-icons";
-import { addMilkRecord, updateMilkRecord } from '../../redux/slices/milkSlice';
+import { addMilkRecord, updateMilkRecord, fetchMilkRecords } from '../../redux/slices/milkSlice';
 import { fetchCows } from '../../redux/slices/cowSlice';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -19,13 +19,15 @@ const AddMilkScreen = () => {
   const [selectedCows, setSelectedCows] = useState([]);
   const [recordMode, setRecordMode] = useState('mass'); // 'mass' or 'individual'
   const { cows } = useSelector((state) => state.cows);
+  const { records: milkRecords } = useSelector(state => state.milk);
   const [formData, setFormData] = useState({
     date: new Date(),
     cowIds: [],
     amTotal: '',
     pmTotal: '',
     totalProduced: '',
-    milkRate: '',
+    milkRateAm: '',
+    milkRatePm: '',
     totalIncome: ''
   });
 
@@ -36,11 +38,12 @@ const AddMilkScreen = () => {
       setFormData({
         ...record,
         date: new Date(record.date), // Convert string date to Date object
-        amTotal: record.amTotal.toString(),
-        pmTotal: record.pmTotal.toString(),
-        totalProduced: record.totalProduced.toString(),
-        milkRate: record.milkRate.toString(), // Ensure milkRate is loaded
-        totalIncome: record.totalIncome.toString(),
+        amTotal: (record.amTotal ?? '').toString(),
+        pmTotal: (record.pmTotal ?? '').toString(),
+        totalProduced: (record.totalProduced ?? '').toString(),
+        milkRateAm: (record.milkRateAm ?? record.milkRate ?? '').toString(),
+        milkRatePm: (record.milkRatePm ?? record.milkRate ?? '').toString(),
+        totalIncome: (record.totalIncome ?? '').toString(),
       });
       if (record.cowIds && record.cowIds.length === 1 && record.cowIds[0] !== 'all') {
         setRecordMode('individual');
@@ -56,46 +59,27 @@ const AddMilkScreen = () => {
       }));
     }
     dispatch(fetchCows());
+    dispatch(fetchMilkRecords());
   }, [params.record, params.fromCowDetails, params.cowId]);
 
   const handleInputChange = (field, value) => {
-    let newValue = value;
-    
-    // Calculate total produced when any of the milk quantities change
-    if (field === 'amTotal' || field === 'pmTotal') {
-      const amTotal = field === 'amTotal' ? parseFloat(value) || 0 : parseFloat(formData.amTotal) || 0;
-      const pmTotal = field === 'pmTotal' ? parseFloat(value) || 0 : parseFloat(formData.pmTotal) || 0;
+    setFormData(prev => {
+      const updatedFormData = { ...prev, [field]: value };
+
+      const amTotal = parseFloat(updatedFormData.amTotal) || 0;
+      const pmTotal = parseFloat(updatedFormData.pmTotal) || 0;
+      const milkRateAm = parseFloat(updatedFormData.milkRateAm) || 0;
+      const milkRatePm = parseFloat(updatedFormData.milkRatePm) || 0;
+
       const totalProduced = amTotal + pmTotal;
-      
-      // Calculate total income if milk rate is set
-      const milkRate = parseFloat(formData.milkRate) || 0;
-      const totalIncome = totalProduced * milkRate;
-      
-      setFormData(prev => ({
-        ...prev,
-        [field]: value,
+      const totalIncome = (amTotal * milkRateAm) + (pmTotal * milkRatePm);
+
+      return {
+        ...updatedFormData,
         totalProduced: totalProduced.toString(),
-        totalIncome: totalIncome.toString()
-      }));
-    }
-    // Calculate total income when milk rate changes
-    else if (field === 'milkRate') {
-      const totalProduced = parseFloat(formData.totalProduced) || 0;
-      const milkRate = parseFloat(value) || 0;
-      const totalIncome = totalProduced * milkRate;
-      
-      setFormData(prev => ({
-        ...prev,
-        [field]: value,
-        totalIncome: totalIncome.toString()
-      }));
-    }
-    else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    }
+        totalIncome: totalIncome.toString(),
+      };
+    });
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -135,6 +119,25 @@ const AddMilkScreen = () => {
       Alert.alert(t('error'), t('dateRequired'));
       return;
     }
+    if (!formData.totalProduced){
+      Alert.alert(t('error'),t('requiredFields'))
+      return
+    }
+
+    // Prevent adding a new mass record if one already exists for the selected date
+    if (!params.record && recordMode === 'mass') {
+      const selectedDateStr = formData.date.toISOString().split('T')[0];
+      const massRecordExists = milkRecords.some(record => {
+        const recordDateStr = new Date(record.date).toISOString().split('T')[0];
+        const isMassRecord = Array.isArray(record.cowIds) && record.cowIds.length === 1 && record.cowIds[0] === 'all';
+        return recordDateStr === selectedDateStr && isMassRecord;
+      });
+
+      if (massRecordExists) {
+        Alert.alert(t('error'), t('massRecordExistsForDate'));
+        return;
+      }
+    }
 
     if (recordMode === 'individual' && selectedCows.length === 0) {
       Alert.alert(t('error'), t('selectAtLeastOneCow'));
@@ -142,14 +145,19 @@ const AddMilkScreen = () => {
     }
 
     // Convert string values to numbers
+    const totalProducedNum = parseFloat(formData.totalProduced) || 0;
+    const totalIncomeNum = parseFloat(formData.totalIncome) || 0;
+
     const milkData = {
       ...formData,
       amTotal: parseFloat(formData.amTotal) || 0,
       pmTotal: parseFloat(formData.pmTotal) || 0,
       date: formData.date instanceof Date ? formData.date.toISOString() : new Date(formData.date).toISOString(),
-      totalProduced: parseFloat(formData.totalProduced) || 0,
-      milkRate: parseFloat(formData.milkRate) || 0,
-      totalIncome: parseFloat(formData.totalIncome) || 0,
+      totalProduced: totalProducedNum,
+      milkRateAm: parseFloat(formData.milkRateAm) || 0,
+      milkRatePm: parseFloat(formData.milkRatePm) || 0,
+      totalIncome: totalIncomeNum,
+      // for backward compatibility
       cowIds: recordMode === 'individual' ? selectedCows.map(String) : ['all']
     };
 
@@ -289,16 +297,30 @@ const AddMilkScreen = () => {
           />
         </View>
 
-        {/* Milk Rate */}
+        {/* Milk Rates */}
         <View className="mb-4">
-          <Text className="text-gray-700 font-semibold mb-2">Rate per Litre (₹)</Text>
-          <TextInput
-            className="bg-white p-3 rounded-lg border border-gray-300"
-            keyboardType="numeric"
-            value={formData.milkRate}
-            onChangeText={(value) => handleInputChange('milkRate', value)}
-            placeholder="0"
-          />
+          <View className="flex-row space-x-2">
+            <View className="flex-1">
+              <Text className="text-gray-700 font-semibold mb-2">AM Rate per Litre (₹)</Text>
+              <TextInput
+                className="bg-white p-3 rounded-lg border border-gray-300"
+                keyboardType="numeric"
+                value={formData.milkRateAm}
+                onChangeText={(value) => handleInputChange('milkRateAm', value)}
+                placeholder="0"
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-700 font-semibold mb-2">PM Rate per Litre (₹)</Text>
+              <TextInput
+                className="bg-white p-3 rounded-lg border border-gray-300"
+                keyboardType="numeric"
+                value={formData.milkRatePm}
+                onChangeText={(value) => handleInputChange('milkRatePm', value)}
+                placeholder="0"
+              />
+            </View>
+          </View>
         </View>
 
         {/* Total Income */}
@@ -317,7 +339,7 @@ const AddMilkScreen = () => {
             onPress={handleSubmit}
           >
             <Text className="text-white text-center font-semibold">
-              {t('addMilkRecord')}
+              {params.record ? t('update') : t('addMilkRecord')}
             </Text>
           </TouchableOpacity>
       </ScrollView>

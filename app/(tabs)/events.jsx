@@ -68,15 +68,41 @@ const EventsScreen = () => {
     return date.toLocaleDateString();
   };
 
-  // Sort events by date in descending order
-  const sortedEvents = [...events].sort((a, b) => new Date(b.date) - new Date(a.date));
+  // New function to calculate days remaining
+  const calculateDaysRemaining = (dateString) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDate = new Date(dateString);
+    eventDate.setHours(0, 0, 0, 0);
+
+    const diffTime = eventDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return t('dueToday');
+    }
+    return t('daysRemaining', { count: diffDays });
+  };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter for upcoming events and sort them by date (ascending)
+  const upcomingEvents = [...events]
+    .filter(event => {
+      if (!event || !event.date) return false;
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate >= today;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // Filter events based on the selected tab
-  const filteredEvents = sortedEvents.filter(event => {
+  const filteredEvents = upcomingEvents.filter(event => {
     if (!event || !event.cowIds) return false;
     
     if (selectedTab === "Individual") {
-      return event.cowIds.length === 1;
+      return event.cowIds.length === 1 || event.cowIds[0] === 'all';
     } else {
       return event.cowIds.length > 1;
     }
@@ -84,13 +110,20 @@ const EventsScreen = () => {
 
   const renderEventCard = (event) => {
     if (!event || !event.cowIds) return null;
-    
     const eventCows = cows.filter(cow => event.cowIds.includes(cow.id));
+    const daysRemainingText = calculateDaysRemaining(event.date);
     return (
       <View key={event.id} className="bg-white p-4 rounded-lg mb-4 mx-4 shadow-sm">
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-lg font-semibold">{event.type}</Text>
-          <Text className="text-gray-600">{formatDate(event.date)}</Text>
+        <View className="flex-row justify-between items-start mb-2">
+          <Text className="text-lg font-semibold flex-1">{t(event.type)}</Text>
+          <View className="items-end">
+            <Text className="text-gray-600">{formatDate(event.date)}</Text>
+            {daysRemainingText && (
+              <View className="bg-yellow-100 px-2 py-1 rounded-full mt-1">
+                <Text className="text-yellow-800 text-xs font-semibold">{daysRemainingText}</Text>
+              </View>
+            )}
+          </View>
         </View>
         
         <View className="mb-2">

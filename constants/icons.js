@@ -1,12 +1,7 @@
-import bookmark from "../assets/icons/bookmark.png";
 import home from "../assets/icons/home.png";
 import profile from "../assets/icons/profile.png";
 import menu from "../assets/icons/menu.png";
-import search from "../assets/icons/search.png";
 import upload from "../assets/icons/upload.png";
-import logout from "../assets/icons/logout.png";
-import eyeHide from "../assets/icons/eye-hide.png";
-import eye from "../assets/icons/eye.png";
 import next from "../assets/icons/next.png";
 import cow from "../assets/icons/cow.png"
 import cow1 from "../assets/icons/cow1.png"
@@ -24,12 +19,14 @@ import open from "../assets/icons/open.png"
 import calendar from "../assets/icons/calendar-icon.png"
 import event from "../assets/icons/event.png"
 import language from "../assets/icons/language.png"
-import notification from "../assets/icons/notification.png"
 import report from "../assets/icons/report.png"
+import privacy from "../assets/icons/privacy.png"
+import aboutUs from "../assets/icons/aboutUs.png"
 
 export default {
+  aboutUs,
+  privacy,
   report,
-  notification,
   language,
   event,
   calendar,
@@ -46,14 +43,9 @@ export default {
   heifer,
   cow,
   cow1,
-  bookmark,
   home,
   profile,
   menu,
-  search,
   upload,
-  logout,
-  eyeHide,
-  eye,
   next,
 };

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchCows } from '../../redux/slices/cowSlice';
 import { Feather } from "@expo/vector-icons";
 import { icons } from "../../constants";
+import { AntDesign } from "@expo/vector-icons";
 
 const FilterCattleScreen = () => {
   const router = useRouter();
@@ -59,8 +60,20 @@ const FilterCattleScreen = () => {
         case 'delete':
           filtered = deletedCows;
           break;
+        case 'activecattle':
+          filtered = cows.filter(cow => cow.isPresent === 1);
+          break;
+        case 'calves':
+          filtered = cows.filter(cow => cow.cattleStage === 'calf');
+          break;
+        case 'heifers':
+          filtered = cows.filter(cow => cow.cattleStage === 'heifer');
+          break;
+        case 'cows':
+          filtered = cows.filter(cow => cow.cattleStage === 'cow');
+          break;
         default:
-          filtered = cows;
+          filtered = [...cows, ...deletedCows];
       }
 
       setFilteredCows(filtered);
@@ -83,6 +96,7 @@ const FilterCattleScreen = () => {
   };
 
   const getFilterTitle = () => {
+    console.log(params.filter)
     switch (params.filter) {
       case 'sick': return t('sick');
       case 'pregnant': return t('pregnant');
@@ -92,6 +106,10 @@ const FilterCattleScreen = () => {
       case 'fresh': return t('fresh');
       case 'open': return t('open');
       case 'delete': return t('delete')
+      case 'calves': return t('calves');
+      case 'heifers': return t('heifers');
+      case 'cows': return t('cows');
+      case 'activecattle': return t('activeCattle');
       default: return t('allCattle');
     }
   };
@@ -123,125 +141,141 @@ const FilterCattleScreen = () => {
         {/* Content */}
         {filteredCows.length === 0 ? (
           <View className="flex-1 justify-center items-center">
-            <View className="bg-purple-200 p-6 rounded-lg items-center">
-              <Image
-                source={icons.cow}
-                className="w-36 h-36 mb-2"
-                resizeMode="contain"
-              />
-              <Text className="text-center text-gray-700 text-base">
-                {t('noCattleMatchFilters')}
-              </Text>
+            <View className="flex-1 justify-center items-center">
+              <View className="bg-purple-200 p-6 rounded-lg items-center">
+                <Image
+                  source={icons.cow}
+                  className="w-36 h-36 mb-2"
+                  resizeMode="contain"
+                />
+                <Text className="text-center text-gray-700 text-base">
+                  {t('noCattleMatchFilters')}
+                </Text>
+              </View>
             </View>
+            <TouchableOpacity
+            className="absolute bottom-6 right-6 bg-blue-500 w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
+            onPress={() => router.push("/(screens)/addCow")}
+          >
+            <AntDesign name="plus" size={24} color="white" />
+            </TouchableOpacity>
           </View>
         ) : (
-          <ScrollView 
-            className="flex-1 p-4"
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            {filteredCows.map((cow) => (
-              <TouchableOpacity
-                key={cow.id}
-                className="bg-white p-4 rounded-lg mb-4 shadow-sm"
-                onPress={() => router.push({
-                  pathname: `/(screens)/cowDetails`,
-                  params: { id: cow.id, source: cow }
-                })}
-              >
-                <View className="flex-row justify-between items-center">
-                  <View>
-                    <Text className="text-lg font-semibold">{cow.name || t('unnamed')}</Text>
-                    <Text className="text-gray-600">ID: {cow.earTagNumber}</Text>
+          <View className="flex-1">
+            <ScrollView 
+              className="flex-1 p-4"
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            >
+              {filteredCows.map((cow) => (
+                <TouchableOpacity
+                  key={cow.id}
+                  className="bg-white p-4 rounded-lg mb-4 shadow-sm"
+                  onPress={() => router.push({
+                    pathname: `/(screens)/cowDetails`,
+                    params: { id: cow.id, source: cow }
+                  })}
+                >
+                  <View className="flex-row justify-between items-center">
+                    <View>
+                      <Text className="text-lg font-semibold">{cow.name || t('unnamed')}</Text>
+                      <Text className="text-gray-600">ID: {cow.earTagNumber}</Text>
+                    </View>
+                    <View className="flex-row items-center">
+                      {cow.isPresent ? (
+                        <>
+                          {cow.isSick === 1 && (
+                            <View className="bg-red-100 px-3 py-1 rounded-full mr-2">
+                              <Text className="text-red-700 font-medium">{t('sick')}</Text>
+                            </View>
+                          )}
+                          <TouchableOpacity
+                            className="bg-blue-100 p-2 rounded-lg ml-2"
+                            onPress={() => router.push({
+                              pathname: "/(screens)/addCow",
+                              params: { 
+                                cowId: cow.id,
+                                edit: true,
+                                cowData: JSON.stringify(cow)
+                              }
+                            })}
+                          >
+                            <Feather name="edit" size={20} color="blue" />
+                          </TouchableOpacity>
+                        </>
+                      ) : (
+                        <Text className="text-red-500 font-semibold">
+                          {t(cow.status)}
+                          {cow.saleAmount ? ` (${t('soldFor')}: ₹${cow.saleAmount})` : ''}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                  <View className="flex-row items-center">
-                    {cow.isPresent ? (
-                      <>
-                        {cow.isSick === 1 && (
-                          <View className="bg-red-100 px-3 py-1 rounded-full mr-2">
-                            <Text className="text-red-700 font-medium">{t('sick')}</Text>
-                          </View>
-                        )}
-                        <TouchableOpacity
-                          className="bg-blue-100 p-2 rounded-lg ml-2"
-                          onPress={() => router.push({
-                            pathname: "/(screens)/addCow",
-                            params: { 
-                              cowId: cow.id,
-                              edit: true,
-                              cowData: JSON.stringify(cow)
-                            }
-                          })}
-                        >
-                          <Feather name="edit" size={20} color="blue" />
-                        </TouchableOpacity>
-                      </>
-                    ) : (
-                      <Text className="text-red-500 font-semibold">
-                        {t(cow.status)}
-                        {cow.saleAmount ? ` (${t('soldFor')}: ₹${cow.saleAmount})` : ''}
-                      </Text>
+
+                  <View className="mt-3 space-y-1">
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('gender')}:</Text>
+                      <Text className="font-medium">{t(cow.gender)}</Text>
+                    </View>
+
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('breed')}:</Text>
+                      <Text className="font-medium">{t(cow.cattleBreed || 'unknown')}</Text>
+                    </View>
+
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('stage')}:</Text>
+                      <Text className="font-medium">{t(cow.cattleStage || 'unknown')}</Text>
+                    </View>
+
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('status')}:</Text>
+                      <Text className="font-medium">{t(cow.cattleStatus || 'unknown')}</Text>
+                    </View>
+
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('weight')}:</Text>
+                      <Text className="font-medium">{cow.weight || '0'} kg</Text>
+                    </View>
+
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('dateOfBirth')}:</Text>
+                      <Text className="font-medium">{formatDate(cow.dateOfBirth)}</Text>
+                    </View>
+
+                    <View className="flex-row justify-between">
+                      <Text className="text-gray-600">{t('dateOfEntry')}:</Text>
+                      <Text className="font-medium">{formatDate(cow.dateOfEntry)}</Text>
+                    </View>
+
+                    {(cow.cattleStatus === 'inseminated' || 
+                      cow.cattleStatus === 'inseminatedAndLactating' || 
+                      cow.cattleStatus === 'inseminatedAndNonLactating') && 
+                      cow.inseminationDate && (
+                      <View className="flex-row justify-between">
+                        <Text className="text-gray-600">{t('inseminationDate')}:</Text>
+                        <Text className="font-medium">{formatDate(cow.inseminationDate)}</Text>
+                      </View>
+                    )}
+
+                    {cow.motherTagNo && (
+                      <View className="flex-row justify-between">
+                        <Text className="text-gray-600">{t('motherTagNo')}:</Text>
+                        <Text className="font-medium">{cow.motherTagNo}</Text>
+                      </View>
                     )}
                   </View>
-                </View>
-
-                <View className="mt-3 space-y-1">
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('gender')}:</Text>
-                    <Text className="font-medium">{t(cow.gender)}</Text>
-                  </View>
-
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('breed')}:</Text>
-                    <Text className="font-medium">{t(cow.cattleBreed || 'unknown')}</Text>
-                  </View>
-
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('stage')}:</Text>
-                    <Text className="font-medium">{t(cow.cattleStage || 'unknown')}</Text>
-                  </View>
-
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('status')}:</Text>
-                    <Text className="font-medium">{t(cow.cattleStatus || 'unknown')}</Text>
-                  </View>
-
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('weight')}:</Text>
-                    <Text className="font-medium">{cow.weight || '0'} kg</Text>
-                  </View>
-
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('dateOfBirth')}:</Text>
-                    <Text className="font-medium">{formatDate(cow.dateOfBirth)}</Text>
-                  </View>
-
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600">{t('dateOfEntry')}:</Text>
-                    <Text className="font-medium">{formatDate(cow.dateOfEntry)}</Text>
-                  </View>
-
-                  {(cow.cattleStatus === 'inseminated' || 
-                    cow.cattleStatus === 'inseminatedAndLactating' || 
-                    cow.cattleStatus === 'inseminatedAndNonLactating') && 
-                    cow.inseminationDate && (
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">{t('inseminationDate')}:</Text>
-                      <Text className="font-medium">{formatDate(cow.inseminationDate)}</Text>
-                    </View>
-                  )}
-
-                  {cow.motherTagNo && (
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-600">{t('motherTagNo')}:</Text>
-                      <Text className="font-medium">{cow.motherTagNo}</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {(params.filter=="allcattle" || params.filter=="activecattle") && <TouchableOpacity
+              className="absolute bottom-6 right-6 bg-blue-500 w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
+              onPress={() => router.push("/(screens)/addCow")}
+            >
+              <AntDesign name="plus" size={24} color="white" />
+            </TouchableOpacity>}
+          </View>
         )}
       </View>
     </SafeAreaView>

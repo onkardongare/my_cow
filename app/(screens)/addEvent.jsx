@@ -26,12 +26,18 @@ const AddEventScreen = () => {
   const cows = useSelector(state => state.cows.cows);
 
   const isEditMode = params.editMode === 'true';
-  const [eventType, setEventType] = useState(isEditMode ? params.eventType : '');
+  const eventTypeOptions = ['delivery', 'insemination', 'checkup', 'vaccination', 'other'];
+  const initialEventType = isEditMode ? params.eventType : '';
+  const isPredefined = eventTypeOptions.filter(o => o !== 'other').includes(initialEventType);
+
+  const [eventType, setEventType] = useState(isEditMode ? (isPredefined ? initialEventType : 'other') : '');
+  const [customEventType, setCustomEventType] = useState(isEditMode && !isPredefined ? initialEventType : '');
   const [description, setDescription] = useState(isEditMode ? params.eventDescription : '');
   const [date, setDate] = useState(isEditMode ? new Date(params.eventDate) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCowSelector, setShowCowSelector] = useState(false);
+  const [showEventTypeModal, setShowEventTypeModal] = useState(false);
   const [selectedCows, setSelectedCows] = useState(isEditMode ? JSON.parse(params.eventCowIds) : []);
 
   useEffect(() => {
@@ -73,7 +79,8 @@ const AddEventScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!eventType) {
+    const finalEventType = eventType === 'other' ? customEventType : eventType;
+    if (!finalEventType) {
       Alert.alert(t('error'), t('eventTypeRequired'));
       return;
     }
@@ -91,7 +98,7 @@ const AddEventScreen = () => {
     setLoading(true);
     try {
       const eventData = {
-        type: eventType,
+        type: finalEventType,
         date: date.toISOString(),
         description,
         cowIds: selectedCows,
@@ -140,13 +147,26 @@ const AddEventScreen = () => {
           </TouchableOpacity>
 
           <Text className="text-gray-700 font-semibold mb-2">{t('eventType')}</Text>
-          <TextInput
+          <TouchableOpacity
             className="bg-white p-3 rounded-lg border border-gray-300 mb-4"
-            value={eventType}
-            onChangeText={setEventType}
-            placeholder={t('enterEventType')}
-          />
+            onPress={() => setShowEventTypeModal(true)}
+          >
+            <Text className="text-gray-600">
+              {eventType ? t(eventType) : t('selectEventType')}
+            </Text>
+          </TouchableOpacity>
 
+          {eventType === 'other' && (
+            <View className="mb-4">
+              <Text className="text-gray-700 font-semibold mb-2">{t('customEventType')}</Text>
+              <TextInput
+                className="bg-white p-3 rounded-lg border border-gray-300"
+                value={customEventType}
+                onChangeText={setCustomEventType}
+                placeholder={t('enterEventType')}
+              />
+            </View>
+          )}
           <Text className="text-gray-700 font-semibold mb-2">{t('date')}</Text>
           <TouchableOpacity
             className="bg-white p-3 rounded-lg border border-gray-300 mb-4"
@@ -161,7 +181,7 @@ const AddEventScreen = () => {
               mode="date"
               display="default"
               onChange={handleDateChange}
-              minimumDate={new Date()}
+              // minimumDate={new Date()}
             />
           )}
 
@@ -238,6 +258,39 @@ const AddEventScreen = () => {
                   {t('done')}
                 </Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Event Type Selector Modal */}
+        <Modal
+          visible={showEventTypeModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowEventTypeModal(false)}
+        >
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-white rounded-t-3xl p-4 max-h-[60%]">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-lg font-semibold">{t('selectEventType')}</Text>
+                <TouchableOpacity onPress={() => setShowEventTypeModal(false)}>
+                  <AntDesign name="close" size={24} color="black" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView>
+                {eventTypeOptions.map(option => (
+                  <TouchableOpacity
+                    key={option}
+                    className={`p-4 border-b border-gray-200 ${eventType === option ? 'bg-blue-50' : ''}`}
+                    onPress={() => {
+                      setEventType(option);
+                      setShowEventTypeModal(false);
+                    }}
+                  >
+                    <Text className="text-gray-800 text-center">{t(option)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           </View>
         </Modal>

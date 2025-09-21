@@ -497,7 +497,7 @@ const CowDetailsScreen = () => {
                     params: { 
                       cowId: cowDetails.id,
                       edit: true,
-                      cowData: JSON.stringify(cowDetails)
+                      cowData: JSON.stringify(cowDetails) 
                     }
                   })}
                 >
@@ -714,13 +714,14 @@ const CowDetailsScreen = () => {
                         </View>
                       </View>
                       <View className="flex-row justify-between mt-2">
-                        <View className="flex-row items-center">
-                          <Text className="text-gray-600 mr-2">{t('ratePerLitre')}:</Text>
-                          <Text className="font-medium">₹{record.milkRate}</Text>
+                        <View className="flex-1">
+                          <Text className="text-gray-600 text-sm">
+                            {t('ratesAmPm')}: ₹{record.milkRateAm?.toFixed(2) || '0.00'} / ₹{record.milkRatePm?.toFixed(2) || '0.00'}
+                          </Text>
                         </View>
-                        <View className="flex-row items-center">
-                          <Text className="text-gray-600 mr-2">{t('totalIncome')}:</Text>
-                          <Text className="font-medium text-green-600">₹{record.totalIncome}</Text>
+                        <View className="items-end">
+                          <Text className="text-gray-600 text-sm">{t('totalIncome')}:</Text>
+                          <Text className="font-medium text-green-600">₹{record.totalIncome?.toFixed(2) || '0.00'}</Text>
                         </View>
                       </View>
                     </View>

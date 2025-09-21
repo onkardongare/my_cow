@@ -26,6 +26,69 @@ export const setupNotificationListener = () => {
   return subscription;
 };
 
+// New function for generating in-app notifications/tasks
+export const generateInAppNotifications = (events, t) => {
+  if (!events || events.length === 0) {
+    return [];
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const newNotifications = [];
+
+  events.forEach(event => {
+    if (event.status !== 'pending') return;
+
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+
+    // --- Rule: Upcoming Delivery (15-day window) ---
+    if (event.type === 'delivery' && eventDate >= today) {
+      const timeDiff = eventDate.getTime() - today.getTime();
+      const fifteenDaysInMs = 15 * 24 * 60 * 60 * 1000;
+      if (timeDiff <= fifteenDaysInMs) {
+        const daysRemaining = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+        let message = daysRemaining === 0
+          ? t('deliveryDueToday')
+          : t('deliveryUpcoming', { days: daysRemaining });
+
+        newNotifications.push({
+          id: `delivery-reminder-${event.id}`,
+          message: message,
+          date: event.date,
+          event: event,
+        });
+      }
+    }
+
+    // --- Rule: Insemination Follow-up (21 days after event) ---
+    if (event.type === 'insemination') {
+      const checkupDate = new Date(eventDate);
+      checkupDate.setDate(eventDate.getDate() + 21);
+      checkupDate.setHours(0, 0, 0, 0);
+      if (today.getTime() === checkupDate.getTime()) {
+        newNotifications.push({
+          id: `insem-check-${event.id}`,
+          message: t('inseminationCheckupDue'),
+          date: today.toISOString(),
+          event: event,
+        });
+      }
+    }
+
+    // --- Rule: General Event Due Today (created in the past) ---
+    const createdAtString = event.createdAt ? event.createdAt.replace(' ', 'T') + 'Z' : new Date(0).toISOString();
+    const createdAtDate = new Date(createdAtString);
+    createdAtDate.setHours(0, 0, 0, 0);
+    if (eventDate.getTime() === today.getTime() && createdAtDate.getTime() < today.getTime() && !newNotifications.some(n => n.event.id === event.id)) {
+      newNotifications.push({ id: `due-today-${event.id}`, message: t('eventDueToday', { eventType: t(event.type) }), date: event.date, event: event });
+    }
+  });
+
+  return newNotifications.sort((a, b) => new Date(a.date) - new Date(b.date));
+};
+
 const checkTodayEvents = async () => {
   try {
     // Dispatch the action directly from the store

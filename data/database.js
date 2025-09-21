@@ -87,7 +87,8 @@ export const initDatabase = async () => {
           amTotal REAL DEFAULT 0,
           pmTotal REAL DEFAULT 0,
           totalProduced REAL NOT NULL,
-          milkRate REAL DEFAULT 0,
+          milkRateAm REAL DEFAULT 0,
+          milkRatePm REAL DEFAULT 0,
           totalIncome REAL DEFAULT 0,
           createdAt TEXT DEFAULT (datetime('now')),
           updatedAt TEXT DEFAULT (datetime('now'))

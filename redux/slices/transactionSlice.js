@@ -60,12 +60,12 @@ export const fetchTransactions = createAsyncThunk(
 );
 export const fetchTransactionsByCowId = createAsyncThunk(
   'transactions/fetchTransactionsByCowId',
-  async (cowId, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
       const db = await getDatabase();
       const rows = await db.getAllAsync(
         'SELECT * FROM transactions WHERE cowId = ? ORDER BY date DESC',
-        [cowId]    
+        [id]    
       );
       return rows;
     } catch (error) {
@@ -90,7 +90,7 @@ export const deleteTransaction = createAsyncThunk(
   }
 );
 
-// Async action: Update transaction
+// Async action: Update transaction 
 export const updateTransaction = createAsyncThunk(
   'transactions/updateTransaction',
   async ({ transactionId, ...transactionData }, { rejectWithValue }) => {

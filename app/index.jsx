@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { images, icons } from '../constants';
+import { icons } from '../constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 
 const OnboardingScreen = () => {
   const router = useRouter();
-  const { t, i18n } = useTranslation();
+  const { t }  = useTranslation();
   const dispatch = useDispatch();
   const [isFirstTime, setIsFirstTime] = useState(true);
   const [isLoading, setIsLoading] = useState(true);

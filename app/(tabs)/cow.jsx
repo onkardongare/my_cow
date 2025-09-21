@@ -338,7 +338,7 @@ const CattleRecordScreen = () => {
                         <TouchableOpacity
                           className="bg-blue-100 p-2 rounded-lg ml-2"
                           onPress={() => router.push({
-                            pathname: "/(screens)/addCow",
+                            pathname: "/(screens)/addCow", 
                             params: { 
                               cowId: cow.id,
                               edit: true,

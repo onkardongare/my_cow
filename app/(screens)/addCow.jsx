@@ -44,8 +44,8 @@ const AddCattleScreen = () => {
     if(isEdit && cowData && (cowData.cattleStatus === 'pregnant' || cowData.cattleStatus === 'inseminated' || 
        cowData.cattleStatus === 'inseminatedAndLactating' || 
        cowData.cattleStatus === 'inseminatedAndNonLactating' ||
-       formData.cattleStatus === 'nonLactatingAndPregnant' || 
-       formData.cattleStatus === 'lactatingAndPregnant')){
+       cowData.cattleStatus === 'nonLactatingAndPregnant' || 
+       cowData.cattleStatus === 'lactatingAndPregnant')){
       return cowData.inseminationDate?.toString() || '';
     }
     return '';
@@ -107,6 +107,7 @@ const AddCattleScreen = () => {
     'holsteinFriesian',
     'sahiwal',
     'gir',
+    'gavathi',
     'redSindhi',
     'tharparkar',
     'other'
@@ -267,7 +268,7 @@ const AddCattleScreen = () => {
     <SafeAreaView className="h-full w-full">
       <View className="flex-1 bg-gray-100">
         {/* Header */}
-        <View className="flex-row items-center p-4 bg-white shadow-md">
+        <View className="flex-row items-center p-4 bg-green-400 shadow-md">
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <AntDesign name="arrowleft" size={24} color="black" />
           </TouchableOpacity>
@@ -296,6 +297,7 @@ const AddCattleScreen = () => {
                 selectedGender === 'male' ? 'border-blue-500 bg-sky-200' : 'border-gray-300 bg-white'
               }`}
               onPress={() => setSelectedGender('male')}
+              disabled
             >
               <Text className={`text-center ${
                 selectedGender === 'male' ? 'text-teal-500 font-semibold' : 'text-gray-700'
@@ -380,7 +382,7 @@ const AddCattleScreen = () => {
           {[
             { field: 'name', label: t('name') },
             { field: 'weight', label: t('weight') },
-            { field: 'motherTagNo', label: t('motherTagNo') },
+            // { field: 'motherTagNo', label: t('motherTagNo') },
           ].map((field, index) => (
             <View key={index} className="mb-4">
               <Text className="text-gray-700 font-semibold mb-1">{field.label}</Text>
